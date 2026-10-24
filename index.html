@@ -405,20 +405,17 @@ function openFolder(f){
   f.items.forEach(n => {
     const t = appTile(n);
     bindLongPress(t);
-    if (editing){
-      bindDrag(t, f.name);
-      t.addEventListener("click", ev => {
-        ev.preventDefault();
-        removeApp(n);
-        layout.push(n);          // 放回桌面末位
-        saveLayout(); buildHome(); openFolder(curFolder);
-      });
-    }
+    if (editing) bindDrag(t, f.name);   // 拖动/轻点的处理都在 bindDrag 里
     fvGrid.appendChild(t);
   });
   fv.classList.add("on");
 }
 function closeFolder(){ fv.classList.remove("on"); curFolder = null; }
+fvTitle.addEventListener("click", () => {
+  if (!editing || !curFolder) return;
+  const n = prompt("文件夹改名", curFolder.name);
+  if (n && n.trim()){ curFolder.name = n.trim(); saveLayout(); buildHome(); fvTitle.textContent = curFolder.name; }
+});
 fv.addEventListener("click", e => {
   if (e.target === fv || e.target.id === "fvGrid" || e.target.classList.contains("fbox")) closeFolder();
 });
@@ -502,59 +499,116 @@ function moveGhost(x, y){
 function clearHi(){
   document.querySelectorAll(".drop-hi").forEach(e => e.classList.remove("drop-hi"));
 }
+function idxOf(name){
+  for (let i = 0; i < layout.length; i++){
+    const it = layout[i];
+    if (typeof it === "string"){ if (it === name) return i; }
+    else if (it.items.indexOf(name) >= 0) return i;
+  }
+  return -1;
+}
+
+// 离坐标最近的槽位下标
+function nearestSlot(x, y){
+  const tiles = [...document.querySelectorAll("#apps .app")];
+  let best = layout.length, bd = 1e9;
+  tiles.forEach(t => {
+    const r = t.getBoundingClientRect();
+    const d = Math.hypot(x - (r.x + r.width/2), y - (r.y + r.height/2));
+    if (d < bd){
+      bd = d;
+      const n = t.dataset.app || t.dataset.folder;
+      const i = idxOf(n);
+      if (i >= 0) best = i;
+    }
+  });
+  if (bd > 260) return layout.length;   // 拖到很空的地方 → 放到最后
+  return Math.max(0, Math.min(best, layout.length));
+}
+
+// 两个 App 叠在一起 → 新建文件夹
+function makeFolderWith(a, b){
+  const ia = idxOf(a), ib = idxOf(b);
+  removeApp(a); removeApp(b);
+  const at = Math.max(0, Math.min(layout.length, Math.min(ia < 0 ? layout.length : ia, ib < 0 ? layout.length : ib)));
+  const f = { name: "新建文件夹", items: [a, b] };
+  layout.splice(at, 0, f);
+  saveLayout(); buildHome();
+  openFolder(f);
+}
+
 function finishDrag(x, y){
   const under = document.elementFromPoint(x, y);
   const name = drag.el.dataset.app;
+  const from = drag.from;
 
-  // 从文件夹里拖出
-  if (drag.from){
+  // ── 从文件夹里拖出 / 文件夹内排序
+  if (from){
     const inBox = under && under.closest("#fv .fbox");
     const tgt = under && under.closest("#fv .app");
     if (!inBox){
-      removeApp(name); layout.push(name);   // 松手在面板外 → 移回桌面
+      removeApp(name); layout.push(name);
     } else if (tgt && tgt !== drag.el && tgt.dataset.app){
-      const f = layout.find(o => typeof o !== "string" && o.name === drag.from);
+      const f = layout.find(o => typeof o !== "string" && o.name === from);
       if (f){
-        const i = f.items.indexOf(name); const j = f.items.indexOf(tgt.dataset.app);
-        if (i >= 0 && j >= 0){ f.items.splice(i,1); f.items.splice(j,0,name); }
+        const i = f.items.indexOf(name), j = f.items.indexOf(tgt.dataset.app);
+        if (i >= 0 && j >= 0){ f.items.splice(i, 1); f.items.splice(j, 0, name); }
       }
     }
     saveLayout(); buildHome();
-    const still = layout.find(o => typeof o !== "string" && o.name === drag.from);
-    if (still && still.items.length){ openFolder(still); } else { closeFolder(); }
+    const still = layout.find(o => typeof o !== "string" && o.name === from);
+    if (still && still.items.length) openFolder(still); else closeFolder();
     if (ghost){ ghost.remove(); ghost = null; }
-    if (drag && drag.el) drag.el.classList.remove("drag-src");
-    fv.classList.remove("drop-out");
-    clearHi(); drag = null;
+    if (drag.el) drag.el.classList.remove("drag-src");
+    fv.classList.remove("drop-out"); clearHi(); drag = null;
     return;
   }
 
-  const folder = under && under.closest("#apps .folder");
+  // ── 桌面上的放置
   const target = under && under.closest("#apps .app");
 
-  if (folder){
-    removeApp(name); addToFolder(name, folder.dataset.folder);
-  } else if (target && target !== drag.el){
+  if (target && target !== drag.el){
+    const r = target.getBoundingClientRect();
+    const cx = r.x + r.width/2, cy = r.y + r.height/2;
+    const centered = Math.abs(x - cx) < r.width * 0.34 && Math.abs(y - cy) < r.height * 0.34;
+
     if (target.dataset.folder){
       removeApp(name); addToFolder(name, target.dataset.folder);
-    } else if (target.dataset.app){
-      removeApp(name); insertBefore(name, target.dataset.app);
+    } else if (centered && target.dataset.app){
+      // 叠在图标中心 → 建文件夹
+      if (ghost){ ghost.remove(); ghost = null; }
+      if (drag.el) drag.el.classList.remove("drag-src");
+      clearHi(); drag = null;
+      makeFolderWith(name, target.dataset.app);
+      return;
+    } else {
+      const tname = target.dataset.app;
+      const right = x >= cx;
+      removeApp(name);                       // 先移除，避免下标错位
+      const i = idxOf(tname);
+      if (i >= 0) layout.splice(right ? i + 1 : i, 0, name); else layout.push(name);
     }
+  } else {
+    const i = nearestSlot(x, y);
+    removeApp(name);
+    layout.splice(Math.max(0, Math.min(i, layout.length)), 0, name);
   }
+
   saveLayout(); buildHome();
   if (ghost){ ghost.remove(); ghost = null; }
-  if (drag && drag.el) drag.el.classList.remove("drag-src");
-  clearHi();
-  drag = null;
+  if (drag.el) drag.el.classList.remove("drag-src");
+  clearHi(); drag = null;
 }
 
 function bindDrag(el, fromFolder){
   el.dataset.from = fromFolder || "";
+  el.style.touchAction = "none";
   el.addEventListener("touchstart", e => {
     if (!editing || !el.dataset.app) return;
+    e.preventDefault();                       // 抢住手势，别让页面滚动抢走
     const t = e.touches[0];
     drag = { el, x0: t.clientX, y0: t.clientY, moved: false, from: fromFolder || null };
-  }, {passive:true});
+  }, {passive:false});
 
   el.addEventListener("touchmove", e => {
     if (!editing || !drag || drag.el !== el) return;
@@ -583,9 +637,17 @@ function bindDrag(el, fromFolder){
     if (drag.moved){
       const t = e.changedTouches[0];
       finishDrag(t.clientX, t.clientY);
-    } else {
-      drag = null;
+      return;
     }
+    // 没拖动：文件夹里轻点 = 移出到桌面
+    if (drag.from){
+      const n = el.dataset.app;
+      removeApp(n); layout.push(n);
+      saveLayout(); buildHome();
+      const still = layout.find(o => typeof o !== "string" && o.name === drag.from);
+      if (still && still.items.length) openFolder(still); else closeFolder();
+    }
+    drag = null;
   });
 
   el.addEventListener("click", ev => { if (editing) ev.preventDefault(); });
