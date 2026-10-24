@@ -149,6 +149,27 @@
   .ctx .menu div:active{background:rgba(255,255,255,.10)}
   .ctx .menu .head{font-size:11px;color:#98a1b6;letter-spacing:1px;padding-bottom:9px}
 
+  /* ── 文件夹 ── */
+  .folder-tile{
+    width:60px;height:60px;border-radius:13.5px;padding:7px;
+    display:grid;grid-template-columns:1fr 1fr;gap:4px;
+    background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 7px 18px rgba(0,0,0,.34);
+  }
+  .folder-tile img{width:100%;height:100%;border-radius:6px;object-fit:cover;display:block}
+  #fv{
+    position:fixed;inset:0;z-index:25;display:none;
+    background:linear-gradient(180deg,#0a0d17,#111524);
+    padding:calc(env(safe-area-inset-top) + 70px) 18px calc(env(safe-area-inset-bottom) + 40px);
+  }
+  #fv.on{display:block}
+  #fv .ftitle{text-align:center;font-size:15px;color:#dfe3ee;letter-spacing:1px;margin-bottom:14px}
+  #fv .fbox{
+    background:rgba(255,255,255,.075);border:1px solid var(--line);border-radius:28px;
+    padding:22px 16px 18px;max-width:520px;margin:0 auto;
+  }
+  #fv .fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 8px}
+
   /* ── 视差与转场 ── */
   #bg{transition:transform .25s ease-out; will-change:transform}
   .page{will-change:transform,opacity}
@@ -181,24 +202,7 @@
       </div>
     </div>
 
-    <div class="apps">
-      <a class="app" href="calshow://"><img src="icons/calendar.png" alt=""><span>日历</span></a>
-      <a class="app" href="clock-alarm://"><img src="icons/clock.png" alt=""><span>时钟</span></a>
-      <a class="app" href="weather://"><img src="icons/weather.png" alt=""><span>天气</span></a>
-      <a class="app" href="maps://"><img src="icons/maps.png" alt=""><span>地图</span></a>
-      <a class="app" href="photos-redirect://"><img src="icons/photos.png" alt=""><span>照片</span></a>
-      <a class="app" href="mobilenotes://"><img src="icons/notes.png" alt=""><span>备忘录</span></a>
-      <a class="app" href="weixin://"><img src="icons/wechat.png" alt=""><span>微信</span></a>
-      <a class="app" href="bilibili://"><img src="icons/bili.png" alt=""><span>哔哩哔哩</span></a>
-      <a class="app" href="orpheus://"><img src="icons/netease.png" alt=""><span>网易云</span></a>
-      <a class="app" href="hkrpg://"><img src="icons/starrail.png" alt=""><span>星穹铁道</span></a>
-      <a class="app" href="minis://"><img src="icons/minis.png" alt=""><span>雪</span></a>
-      <a class="app" href="#p2" id="toP2"><img src="icons/widgets.png" alt=""><span>面板</span></a>
-      <a class="app" href="music://"><img src="icons/music.png" alt=""><span>音乐</span></a>
-      <a class="app" href="podcasts://"><img src="icons/podcasts.png" alt=""><span>播客</span></a>
-      <a class="app" href="x-apple-health://"><img src="icons/health.png" alt=""><span>健康</span></a>
-      <a class="app" href="shareddocuments://"><img src="icons/files.png" alt=""><span>文件</span></a>
-    </div>
+    <div class="apps" id="apps"></div>
 
     <footer>点「雪」随时找我 · 左右滑动看面板 🐾</footer>
   </section>
@@ -260,12 +264,97 @@
 
 <div class="ctx" id="ctx"><div class="menu" id="ctxMenu"></div></div>
 
+<div id="fv">
+  <div class="ftitle" id="fvTitle"></div>
+  <div class="fbox"><div class="fgrid" id="fvGrid"></div></div>
+</div>
+
 <script>
 const LAT = 23.3924, LON = 113.4924;
 const CODE = {0:"晴",1:"大部晴",2:"局部多云",3:"阴",45:"雾",48:"雾凇",51:"小毛雨",53:"毛雨",55:"浓毛雨",
   61:"小雨",63:"中雨",65:"大雨",66:"冻雨",67:"冻雨",71:"小雪",73:"中雪",75:"大雪",77:"雪粒",
   80:"阵雨",81:"强阵雨",82:"暴雨",85:"阵雪",86:"强阵雪",95:"雷阵雨",96:"雷阵雨伴冰雹",99:"强雷暴"};
 const two = n => String(n).padStart(2, "0");
+
+// ── 应用与文件夹数据
+const APPS = {
+  "日历": ["icons/calendar.png", "calshow://"],
+  "时钟": ["icons/clock.png", "clock-alarm://"],
+  "天气": ["icons/weather.png", "weather://"],
+  "地图": ["icons/maps.png", "maps://"],
+  "照片": ["icons/photos.png", "photos-redirect://"],
+  "备忘录": ["icons/notes.png", "mobilenotes://"],
+  "微信": ["icons/wechat.png", "weixin://"],
+  "哔哩哔哩": ["icons/bili.png", "bilibili://"],
+  "网易云": ["icons/netease.png", "orpheus://"],
+  "星穹铁道": ["icons/starrail.png", "hkrpg://"],
+  "雪": ["icons/minis.png", "minis://"],
+  "面板": ["icons/widgets.png", "#p2"],
+  "音乐": ["icons/music.png", "music://"],
+  "播客": ["icons/podcasts.png", "podcasts://"],
+  "健康": ["icons/health.png", "x-apple-health://"],
+  "文件": ["icons/files.png", "shareddocuments://"]
+};
+
+const LAYOUT = [
+  "日历", "时钟", "天气", "地图",
+  "照片", "备忘录", "微信",
+  { name:"影音", items:["网易云", "哔哩哔哩", "音乐", "播客"] },
+  { name:"工具箱", items:["星穹铁道", "健康", "文件"] },
+  "雪", "面板"
+];
+
+function appTile(name){
+  const [img, href] = APPS[name];
+  const a = document.createElement("a");
+  a.className = "app"; a.href = href;
+  if (href === "#p2") a.id = "toP2";
+  a.innerHTML = `<img src="${img}" alt=""><span>${name}</span>`;
+  return a;
+}
+
+function folderTile(f){
+  const d = document.createElement("div");
+  d.className = "app folder";
+  d.dataset.folder = f.name;
+  const box = document.createElement("div");
+  box.className = "folder-tile";
+  f.items.slice(0, 4).forEach(n => {
+    const im = document.createElement("img");
+    im.src = APPS[n][0]; im.alt = n;
+    box.appendChild(im);
+  });
+  const sp = document.createElement("span");
+  sp.textContent = f.name;
+  d.appendChild(box); d.appendChild(sp);
+  d.addEventListener("click", () => openFolder(f, d));
+  return d;
+}
+
+const appsEl = document.getElementById("apps");
+LAYOUT.forEach(item => {
+  appsEl.appendChild(typeof item === "string" ? appTile(item) : folderTile(item));
+});
+
+// ── 文件夹展开层
+const fv = document.getElementById("fv");
+const fvTitle = document.getElementById("fvTitle");
+const fvGrid = document.getElementById("fvGrid");
+
+function openFolder(f, src){
+  fvTitle.textContent = f.name;
+  fvGrid.innerHTML = "";
+  f.items.forEach(n => {
+    const t = appTile(n);
+    bindLongPress(t);
+    fvGrid.appendChild(t);
+  });
+  fv.classList.add("on");
+}
+function closeFolder(){ fv.classList.remove("on"); }
+fv.addEventListener("click", e => {
+  if (e.target === fv || e.target.id === "fvGrid" || e.target.classList.contains("fbox")) closeFolder();
+});
 
 function tick(){
   const d = new Date(), h = d.getHours();
@@ -331,12 +420,8 @@ document.getElementById("toP2").addEventListener("click", e => {
 });
 
 // ── 搜索（下拉唤起 / 点胶囊）
-const appNodes = [...document.querySelectorAll(".apps .app")].map(a => ({
-  name: a.querySelector("span").textContent.trim(),
-  href: a.getAttribute("href"),
-  img: a.querySelector("img").getAttribute("src"),
-  self: a.id === "toP2"
-}));
+const appNodes = Object.entries(APPS).map(([name, [img, href]]) =>
+  ({ name, href, img, self: href === "#p2" }));
 const ov = document.getElementById("ov");
 const q = document.getElementById("q");
 const ovBody = document.getElementById("ovBody");
@@ -406,13 +491,19 @@ function showCtx(el, x, y){
   head.className = "head"; head.textContent = name;
   ctxMenu.appendChild(head);
 
+  const isFolder = !!el.dataset.folder;
   const open = document.createElement("div");
   open.textContent = "打开";
-  open.addEventListener("click", () => { closeCtx(); if (self) goPanel(); else location.href = href; });
+  open.addEventListener("click", () => {
+    closeCtx();
+    if (isFolder) { el.click(); return; }
+    if (self) goPanel(); else location.href = href;
+  });
 
   const copy = document.createElement("div");
   copy.textContent = "复制链接";
   copy.addEventListener("click", async () => {
+    if (!href) { copy.textContent = "文件夹没有链接"; setTimeout(closeCtx, 500); return; }
     try{
       await navigator.clipboard.writeText(self ? location.href : new URL(href, location.href).href);
       copy.textContent = "已复制";
