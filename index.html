@@ -467,13 +467,14 @@ document.getElementById("newFolderBtn").addEventListener("click", () => {
 
 // 长按空白进编辑
 let bgTimer = null;
-appsEl.addEventListener("touchstart", e => {
+const homePage = document.querySelector(".page");
+homePage.addEventListener("touchstart", e => {
   if (editing) return;
-  if (e.target.closest(".app")) return;
-  bgTimer = setTimeout(() => setEditing(true), 600);
+  if (e.target.closest(".app, a, input, .w")) return;
+  bgTimer = setTimeout(() => setEditing(true), 500);
 }, {passive:true});
-appsEl.addEventListener("touchend", () => clearTimeout(bgTimer), {passive:true});
-appsEl.addEventListener("touchmove", () => clearTimeout(bgTimer), {passive:true});
+homePage.addEventListener("touchend", () => clearTimeout(bgTimer), {passive:true});
+homePage.addEventListener("touchmove", () => clearTimeout(bgTimer), {passive:true});
 
 // ── 拖拽
 let drag = null, ghost = null;
@@ -710,11 +711,15 @@ function showCtx(el, x, y){
     setTimeout(closeCtx, 480);
   });
 
+  const arrange = document.createElement("div");
+  arrange.textContent = "整理桌面";
+  arrange.addEventListener("click", () => { closeCtx(); setEditing(true); });
+
   const cancel = document.createElement("div");
   cancel.textContent = "取消";
   cancel.addEventListener("click", closeCtx);
 
-  [open, copy, cancel].forEach(n => ctxMenu.appendChild(n));
+  [open, copy, arrange, cancel].forEach(n => ctxMenu.appendChild(n));
   ctx.classList.add("on");
 
   const m = ctxMenu.getBoundingClientRect();
