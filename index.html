@@ -135,6 +135,23 @@
     background:rgba(255,255,255,.05);border:1px solid var(--line);margin-bottom:8px;color:var(--txt);text-decoration:none}
   #ov .row img{width:34px;height:34px;border-radius:9px}
   #ov .row span{font-size:14px}
+
+  /* ── 长按图标菜单 ── */
+  .ctx{position:fixed;inset:0;z-index:30;display:none;background:rgba(0,0,0,.30)}
+  .ctx.on{display:block}
+  .ctx .menu{
+    position:absolute;min-width:200px;max-width:240px;
+    background:#23252f;border:1px solid rgba(255,255,255,.13);
+    border-radius:18px;overflow:hidden;box-shadow:0 20px 56px rgba(0,0,0,.55);
+  }
+  .ctx .menu div{padding:13px 16px;font-size:15px;color:#eef0f6;border-top:1px solid rgba(255,255,255,.08)}
+  .ctx .menu div:first-child{border-top:none}
+  .ctx .menu div:active{background:rgba(255,255,255,.10)}
+  .ctx .menu .head{font-size:11px;color:#98a1b6;letter-spacing:1px;padding-bottom:9px}
+
+  /* ── 视差与转场 ── */
+  #bg{transition:transform .25s ease-out; will-change:transform}
+  .page{will-change:transform,opacity}
 </style>
 </head>
 <body>
@@ -240,6 +257,8 @@
   <a href="orpheus://"><img src="icons/netease.png" alt="网易云"></a>
   <a href="minis://"><img src="icons/minis.png" alt="雪"></a>
 </nav>
+
+<div class="ctx" id="ctx"><div class="menu" id="ctxMenu"></div></div>
 
 <script>
 const LAT = 23.3924, LON = 113.4924;
@@ -370,6 +389,103 @@ page1.addEventListener("touchstart", e => {
 page1.addEventListener("touchmove", e => {
   if (startY !== null && e.touches[0].clientY - startY > 70){ startY = null; openOv(); }
 }, {passive:true});
+
+// ── 长按图标菜单（iOS 式）
+const ctx = document.getElementById("ctx");
+const ctxMenu = document.getElementById("ctxMenu");
+let pressTimer = null, longFired = false;
+
+function closeCtx(){ ctx.classList.remove("on"); }
+
+function showCtx(el, x, y){
+  const name = el.querySelector("span") ? el.querySelector("span").textContent.trim() : "App";
+  const href = el.getAttribute("href");
+  const self = el.id === "toP2";
+  ctxMenu.innerHTML = "";
+  const head = document.createElement("div");
+  head.className = "head"; head.textContent = name;
+  ctxMenu.appendChild(head);
+
+  const open = document.createElement("div");
+  open.textContent = "打开";
+  open.addEventListener("click", () => { closeCtx(); if (self) goPanel(); else location.href = href; });
+
+  const copy = document.createElement("div");
+  copy.textContent = "复制链接";
+  copy.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(self ? location.href : new URL(href, location.href).href);
+      copy.textContent = "已复制";
+    }catch(e){ copy.textContent = "复制失败"; }
+    setTimeout(closeCtx, 480);
+  });
+
+  const cancel = document.createElement("div");
+  cancel.textContent = "取消";
+  cancel.addEventListener("click", closeCtx);
+
+  [open, copy, cancel].forEach(n => ctxMenu.appendChild(n));
+  ctx.classList.add("on");
+
+  const m = ctxMenu.getBoundingClientRect();
+  const maxX = innerWidth - m.width - 12, maxY = innerHeight - m.height - 12;
+  ctxMenu.style.left = Math.max(12, Math.min(x - m.width/2, maxX)) + "px";
+  ctxMenu.style.top  = Math.max(64, Math.min(y + 12, maxY)) + "px";
+}
+
+function bindLongPress(el){
+  let sx = 0, sy = 0;
+  el.addEventListener("touchstart", ev => {
+    const t = ev.touches[0]; sx = t.clientX; sy = t.clientY;
+    longFired = false; clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => { longFired = true; showCtx(el, sx, sy); }, 450);
+  }, {passive:true});
+  el.addEventListener("touchmove", ev => {
+    const t = ev.touches[0];
+    if (Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) clearTimeout(pressTimer);
+  }, {passive:true});
+  el.addEventListener("touchend", () => clearTimeout(pressTimer), {passive:true});
+  el.addEventListener("click", ev => {
+    if (longFired){ ev.preventDefault(); ev.stopPropagation(); longFired = false; }
+  });
+}
+document.querySelectorAll(".app, .dock a").forEach(bindLongPress);
+ctx.addEventListener("click", e => { if (e.target === ctx) closeCtx(); });
+
+// ── 翻页视差（两页一起动，iOS 那种）
+const pageEls = [...document.querySelectorAll(".page")];
+function parallax(){
+  const w = pages.clientWidth || 1, x = pages.scrollLeft;
+  pageEls.forEach((p, i) => {
+    const k = Math.max(-1, Math.min(1, (x - i*w) / w));
+    p.style.transform = `translateX(${(k*16).toFixed(1)}px) scale(${(1 - Math.abs(k)*0.035).toFixed(3)})`;
+    p.style.opacity = (1 - Math.abs(k)*0.5).toFixed(2);
+  });
+}
+pages.addEventListener("scroll", parallax, {passive:true});
+parallax();
+
+// ── 壁纸陀螺仪视差
+const bgEl = document.getElementById("bg");
+let tiltOn = false;
+function onTilt(e){
+  const g = Math.max(-1, Math.min(1, (e.gamma || 0) / 45));
+  const b = Math.max(-1, Math.min(1, ((e.beta || 0) - 45) / 45));
+  bgEl.style.transform = `translate3d(${(-g*10).toFixed(1)}px, ${(b*8).toFixed(1)}px, 0) scale(1.09)`;
+}
+function enableTilt(){
+  if (tiltOn) return;
+  const D = window.DeviceOrientationEvent;
+  if (!D) return;
+  if (typeof D.requestPermission === "function"){
+    D.requestPermission().then(st => {
+      if (st === "granted"){ tiltOn = true; addEventListener("deviceorientation", onTilt); }
+    }).catch(() => {});
+  } else {
+    tiltOn = true; addEventListener("deviceorientation", onTilt);
+  }
+}
+addEventListener("touchstart", enableTilt, {once:true, passive:true});
 
 // 离线缓存
 if ("serviceWorker" in navigator) {
