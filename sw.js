@@ -1,5 +1,5 @@
 /* 雪 OS · 离线缓存 */
-const CACHE = "xue-os-v3";
+const CACHE = "xue-os-v4";
 const SHELL = [
   "./",
   "./index.html",
@@ -60,6 +60,22 @@ self.addEventListener("fetch", e => {
         return hit || new Response(JSON.stringify({offline: true}), {
           headers: {"Content-Type": "application/json"}
         });
+      }
+    })());
+    return;
+  }
+
+  // 页面导航：先走网络（保证拿到最新版），断网回退缓存
+  if (req.mode === "navigate") {
+    e.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      try {
+        const fresh = await fetch(req);
+        if (fresh && fresh.status === 200) c.put("./index.html", fresh.clone());
+        return fresh;
+      } catch (err) {
+        return (await c.match("./index.html")) || (await c.match(req)) ||
+          new Response("离线且无缓存", {status: 503, headers: {"Content-Type": "text/plain; charset=utf-8"}});
       }
     })());
     return;
