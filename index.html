@@ -169,6 +169,11 @@
     padding:22px 16px 18px;max-width:520px;margin:0 auto;
   }
   #fv .fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 8px}
+  #fv.drop-out .fbox{opacity:.45;border-style:dashed}
+  #fv.drop-out::after{
+    content:"松手移出文件夹";position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 40px);
+    text-align:center;font-size:13px;color:#93a4ff;letter-spacing:1px;
+  }
 
   /* ── 编辑模式 ── */
   body.editing .app{animation:jiggle .28s infinite alternate ease-in-out}
@@ -401,6 +406,7 @@ function openFolder(f){
     const t = appTile(n);
     bindLongPress(t);
     if (editing){
+      bindDrag(t, f.name);
       t.addEventListener("click", ev => {
         ev.preventDefault();
         removeApp(n);
@@ -498,9 +504,33 @@ function clearHi(){
 }
 function finishDrag(x, y){
   const under = document.elementFromPoint(x, y);
+  const name = drag.el.dataset.app;
+
+  // 从文件夹里拖出
+  if (drag.from){
+    const inBox = under && under.closest("#fv .fbox");
+    const tgt = under && under.closest("#fv .app");
+    if (!inBox){
+      removeApp(name); layout.push(name);   // 松手在面板外 → 移回桌面
+    } else if (tgt && tgt !== drag.el && tgt.dataset.app){
+      const f = layout.find(o => typeof o !== "string" && o.name === drag.from);
+      if (f){
+        const i = f.items.indexOf(name); const j = f.items.indexOf(tgt.dataset.app);
+        if (i >= 0 && j >= 0){ f.items.splice(i,1); f.items.splice(j,0,name); }
+      }
+    }
+    saveLayout(); buildHome();
+    const still = layout.find(o => typeof o !== "string" && o.name === drag.from);
+    if (still && still.items.length){ openFolder(still); } else { closeFolder(); }
+    if (ghost){ ghost.remove(); ghost = null; }
+    if (drag && drag.el) drag.el.classList.remove("drag-src");
+    fv.classList.remove("drop-out");
+    clearHi(); drag = null;
+    return;
+  }
+
   const folder = under && under.closest("#apps .folder");
   const target = under && under.closest("#apps .app");
-  const name = drag.el.dataset.app;
 
   if (folder){
     removeApp(name); addToFolder(name, folder.dataset.folder);
@@ -518,11 +548,12 @@ function finishDrag(x, y){
   drag = null;
 }
 
-function bindDrag(el){
+function bindDrag(el, fromFolder){
+  el.dataset.from = fromFolder || "";
   el.addEventListener("touchstart", e => {
     if (!editing || !el.dataset.app) return;
     const t = e.touches[0];
-    drag = { el, x0: t.clientX, y0: t.clientY, moved: false };
+    drag = { el, x0: t.clientX, y0: t.clientY, moved: false, from: fromFolder || null };
   }, {passive:true});
 
   el.addEventListener("touchmove", e => {
@@ -537,8 +568,13 @@ function bindDrag(el){
       moveGhost(t.clientX, t.clientY);
       clearHi();
       const under = document.elementFromPoint(t.clientX, t.clientY);
-      const tgt = under && under.closest("#apps .app");
-      if (tgt && tgt !== el) tgt.classList.add("drop-hi");
+      if (drag.from){
+        const inBox = under && under.closest("#fv .fbox");
+        fv.classList.toggle("drop-out", !inBox);
+      } else {
+        const tgt = under && under.closest("#apps .app");
+        if (tgt && tgt !== el) tgt.classList.add("drop-hi");
+      }
     }
   }, {passive:false});
 
