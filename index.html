@@ -96,6 +96,45 @@
   .albums a:active{background:rgba(139,124,255,.32)}
   .empty{color:var(--dim);font-size:12.5px;text-align:center;padding:6px}
   footer{text-align:center;color:#5f6880;font-size:10.5px;margin-top:26px;letter-spacing:1px}
+
+  /* ── iOS 化细节 ── */
+  body{-webkit-touch-callout:none}
+  img{-webkit-user-drag:none; user-select:none}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .pages{animation:none}
+  .app img{border-radius:13.5px}
+  .search-pill{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(env(safe-area-inset-bottom) + 106px); z-index:6;
+    display:flex; align-items:center; gap:6px; padding:7px 14px;
+    border-radius:16px; background:rgba(255,255,255,.085); border:1px solid var(--line);
+    font-size:12px; color:#cfd4e4; letter-spacing:.5px;
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  }
+  .search-pill:active{background:rgba(255,255,255,.16)}
+  .search-pill svg{width:11px;height:11px;opacity:.7}
+
+  #ov{
+    position:fixed; inset:0; z-index:20; display:none;
+    background:linear-gradient(180deg,#080a12,#0e1220);
+    padding:calc(env(safe-area-inset-top) + 54px) 20px calc(env(safe-area-inset-bottom) + 24px);
+  }
+  #ov.on{display:block}
+  #ov .box{max-width:560px;margin:0 auto}
+  .searchrow{display:flex;align-items:center;gap:10px}
+  #cancel{font-size:14px;color:#93a4ff;white-space:nowrap;padding:6px 2px}
+  #ov input{
+    width:100%; padding:13px 16px; border-radius:15px; font-size:16px;
+    border:1px solid var(--line); background:rgba(255,255,255,.10); color:var(--txt);
+    outline:none; font-family:inherit;
+  }
+  #ov input::placeholder{color:#8f98ad}
+  #ov .res{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;margin-top:20px}
+  #ov .hint{color:var(--dim);font-size:12px;text-align:center;margin-top:26px;line-height:1.7}
+  #ov .row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);margin-bottom:8px;color:var(--txt);text-decoration:none}
+  #ov .row img{width:34px;height:34px;border-radius:9px}
+  #ov .row span{font-size:14px}
 </style>
 </head>
 <body>
@@ -179,6 +218,22 @@
 
 <div class="dots" id="dots"><i class="on"></i><i></i></div>
 
+<div class="search-pill" id="searchPill">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+  搜索
+</div>
+
+<div id="ov">
+  <div class="box">
+    <div class="searchrow">
+      <input id="q" type="search" placeholder="搜索 App" autocomplete="off" autocorrect="off" spellcheck="false">
+      <b id="cancel">取消</b>
+    </div>
+    <div id="ovBody"></div>
+    <div class="hint" id="ovHint">输入名字找 App，比如「微信」「网易云」<br>点空白处关闭</div>
+  </div>
+</div>
+
 <nav class="dock">
   <a href="tel://"><img src="icons/phone.png" alt="电话"></a>
   <a href="sms://"><img src="icons/sms.png" alt="信息"></a>
@@ -255,6 +310,66 @@ document.getElementById("toP2").addEventListener("click", e => {
   e.preventDefault();
   pages.scrollTo({left: pages.clientWidth, behavior:"smooth"});
 });
+
+// ── 搜索（下拉唤起 / 点胶囊）
+const appNodes = [...document.querySelectorAll(".apps .app")].map(a => ({
+  name: a.querySelector("span").textContent.trim(),
+  href: a.getAttribute("href"),
+  img: a.querySelector("img").getAttribute("src"),
+  self: a.id === "toP2"
+}));
+const ov = document.getElementById("ov");
+const q = document.getElementById("q");
+const ovBody = document.getElementById("ovBody");
+const ovHint = document.getElementById("ovHint");
+
+function goPanel(){ closeOv(); pages.scrollTo({left: pages.clientWidth, behavior:"smooth"}); }
+
+function render(kw){
+  const k = kw.trim().toLowerCase();
+  const list = k ? appNodes.filter(a => a.name.toLowerCase().includes(k)) : appNodes;
+  ovBody.innerHTML = "";
+  if (!list.length){ ovHint.textContent = "没找到「" + kw + "」喵"; return; }
+  ovHint.textContent = "共 " + list.length + " 个 · 点空白处关闭";
+  if (k){
+    list.forEach(a => {
+      const el = document.createElement("a");
+      el.className = "row"; el.href = a.href;
+      el.innerHTML = `<img src="${a.img}"><span>${a.name}</span>`;
+      if (a.self) el.addEventListener("click", ev => { ev.preventDefault(); goPanel(); });
+      ovBody.appendChild(el);
+    });
+  } else {
+    const g = document.createElement("div"); g.className = "res";
+    list.forEach(a => {
+      const el = document.createElement("a");
+      el.className = "app"; el.href = a.href;
+      el.innerHTML = `<img src="${a.img}"><span>${a.name}</span>`;
+      if (a.self) el.addEventListener("click", ev => { ev.preventDefault(); goPanel(); });
+      g.appendChild(el);
+    });
+    ovBody.appendChild(g);
+  }
+}
+function openOv(){ ov.classList.add("on"); render(""); setTimeout(() => q.focus(), 80); }
+function closeOv(){ ov.classList.remove("on"); q.value = ""; ovBody.innerHTML = ""; }
+
+document.getElementById("searchPill").addEventListener("click", openOv);
+document.getElementById("cancel").addEventListener("click", closeOv);
+q.addEventListener("input", () => render(q.value));
+ov.addEventListener("click", e => {
+  if (e.target === ov || e.target.classList.contains("box")) closeOv();
+});
+
+// 第一页顶部下拉唤起（iOS 手感）
+let startY = null;
+const page1 = document.querySelector(".page");
+page1.addEventListener("touchstart", e => {
+  startY = page1.scrollTop <= 0 ? e.touches[0].clientY : null;
+}, {passive:true});
+page1.addEventListener("touchmove", e => {
+  if (startY !== null && e.touches[0].clientY - startY > 70){ startY = null; openOv(); }
+}, {passive:true});
 
 // 离线缓存
 if ("serviceWorker" in navigator) {
