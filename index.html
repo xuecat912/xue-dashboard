@@ -170,6 +170,33 @@
   }
   #fv .fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 8px}
 
+  /* ── 编辑模式 ── */
+  body.editing .app{animation:jiggle .28s infinite alternate ease-in-out}
+  body.editing .app:nth-child(2n){animation-delay:.09s}
+  body.editing .app:nth-child(3n){animation-delay:.17s}
+  @keyframes jiggle{
+    from{transform:rotate(-1.1deg) translateY(0)}
+    to{transform:rotate(1.1deg) translateY(-1px)}
+  }
+  .drag-ghost{
+    position:fixed;left:0;top:0;z-index:40;pointer-events:none;
+    animation:none !important;opacity:.95;
+    filter:drop-shadow(0 12px 22px rgba(0,0,0,.55));
+  }
+  .drop-hi .folder-tile, .drop-hi > img{
+    outline:2px solid rgba(147,164,255,.95);outline-offset:3px;
+  }
+  .app.drag-src{opacity:.28;animation:none !important}
+  #editBar{
+    position:fixed;left:14px;right:14px;top:calc(env(safe-area-inset-top) + 8px);z-index:28;
+    display:none;align-items:center;gap:12px;padding:10px 14px;
+    border-radius:18px;background:rgba(28,32,48,.96);border:1px solid rgba(255,255,255,.12);
+    font-size:11.5px;color:#cfd4e4;
+  }
+  #editBar.on{display:flex}
+  #editBar span{flex:1;color:#98a1b6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #editBar b{color:#93a4ff;font-weight:600;white-space:nowrap}
+
   /* ── 视差与转场 ── */
   #bg{transition:transform .25s ease-out; will-change:transform}
   .page{will-change:transform,opacity}
@@ -264,6 +291,13 @@
 
 <div class="ctx" id="ctx"><div class="menu" id="ctxMenu"></div></div>
 
+<div id="editBar">
+  <span>抖动编辑 · 拖动图标整理</span>
+  <b id="newFolderBtn">新建文件夹</b>
+  <b id="resetLayout">重置</b>
+  <b id="doneEdit">完成</b>
+</div>
+
 <div id="fv">
   <div class="ftitle" id="fvTitle"></div>
   <div class="fbox"><div class="fgrid" id="fvGrid"></div></div>
@@ -296,18 +330,31 @@ const APPS = {
   "文件": ["icons/files.png", "shareddocuments://"]
 };
 
-const LAYOUT = [
+const DEFAULT_LAYOUT = [
   "日历", "时钟", "天气", "地图",
   "照片", "备忘录", "微信",
   { name:"影音", items:["网易云", "哔哩哔哩", "音乐", "播客"] },
   { name:"工具箱", items:["星穹铁道", "健康", "文件"] },
   "雪", "面板"
 ];
+const LSKEY = "xue_layout_v1";
+let editing = false;
+
+function loadLayout(){
+  try{
+    const j = JSON.parse(localStorage.getItem(LSKEY));
+    if (Array.isArray(j) && j.length) return j;
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+}
+let layout = loadLayout();
+function saveLayout(){ try{ localStorage.setItem(LSKEY, JSON.stringify(layout)); }catch(e){} }
 
 function appTile(name){
   const [img, href] = APPS[name];
   const a = document.createElement("a");
   a.className = "app"; a.href = href;
+  a.dataset.app = name;
   if (href === "#p2") a.id = "toP2";
   a.innerHTML = `<img src="${img}" alt=""><span>${name}</span>`;
   return a;
@@ -327,34 +374,185 @@ function folderTile(f){
   const sp = document.createElement("span");
   sp.textContent = f.name;
   d.appendChild(box); d.appendChild(sp);
-  d.addEventListener("click", () => openFolder(f, d));
+  d.addEventListener("click", () => openFolder(f));
   return d;
 }
 
 const appsEl = document.getElementById("apps");
-LAYOUT.forEach(item => {
-  appsEl.appendChild(typeof item === "string" ? appTile(item) : folderTile(item));
-});
+function buildHome(){
+  appsEl.innerHTML = "";
+  layout.forEach(item => appsEl.appendChild(typeof item === "string" ? appTile(item) : folderTile(item)));
+  if (editing) document.body.classList.add("editing");
+  document.querySelectorAll("#apps .app").forEach(bindDrag);
+}
+buildHome();
 
 // ── 文件夹展开层
 const fv = document.getElementById("fv");
 const fvTitle = document.getElementById("fvTitle");
 const fvGrid = document.getElementById("fvGrid");
+let curFolder = null;
 
-function openFolder(f, src){
-  fvTitle.textContent = f.name;
+function openFolder(f){
+  curFolder = f;
+  fvTitle.textContent = f.name + (editing ? " · 点图标可移出" : "");
   fvGrid.innerHTML = "";
   f.items.forEach(n => {
     const t = appTile(n);
     bindLongPress(t);
+    if (editing){
+      t.addEventListener("click", ev => {
+        ev.preventDefault();
+        removeApp(n);
+        layout.push(n);          // 放回桌面末位
+        saveLayout(); buildHome(); openFolder(curFolder);
+      });
+    }
     fvGrid.appendChild(t);
   });
   fv.classList.add("on");
 }
-function closeFolder(){ fv.classList.remove("on"); }
+function closeFolder(){ fv.classList.remove("on"); curFolder = null; }
 fv.addEventListener("click", e => {
   if (e.target === fv || e.target.id === "fvGrid" || e.target.classList.contains("fbox")) closeFolder();
 });
+
+// ── 布局变更
+function removeApp(name){
+  for (let i = 0; i < layout.length; i++){
+    const it = layout[i];
+    if (typeof it === "string"){ if (it === name){ layout.splice(i, 1); return true; } }
+    else {
+      const k = it.items.indexOf(name);
+      if (k >= 0){ it.items.splice(k, 1); if (!it.items.length) layout.splice(i, 1); return true; }
+    }
+  }
+  return false;
+}
+function insertBefore(name, beforeName){
+  if (beforeName){
+    for (let i = 0; i < layout.length; i++){
+      const it = layout[i];
+      if (typeof it === "string" && it === beforeName){ layout.splice(i, 0, name); return; }
+      if (typeof it !== "string"){ const k = it.items.indexOf(beforeName); if (k >= 0){ it.items.splice(k, 0, name); return; } }
+    }
+  }
+  layout.push(name);
+}
+function addToFolder(name, folderName){
+  const f = layout.find(x => typeof x !== "string" && x.name === folderName);
+  if (f) f.items.push(name); else layout.push(name);
+}
+
+// ── 编辑模式
+const editBar = document.getElementById("editBar");
+function setEditing(v){
+  editing = v;
+  document.body.classList.toggle("editing", v);
+  editBar.classList.toggle("on", v);
+  if (!v) closeFolder();
+  buildHome();
+}
+document.getElementById("doneEdit").addEventListener("click", () => setEditing(false));
+document.getElementById("resetLayout").addEventListener("click", () => {
+  layout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
+  saveLayout(); buildHome();
+});
+document.getElementById("newFolderBtn").addEventListener("click", () => {
+  const name = prompt("新文件夹的名字？", "新文件夹");
+  if (!name) return;
+  layout.push({ name: name.trim(), items: [] });
+  saveLayout(); buildHome();
+});
+
+// 长按空白进编辑
+let bgTimer = null;
+appsEl.addEventListener("touchstart", e => {
+  if (editing) return;
+  if (e.target.closest(".app")) return;
+  bgTimer = setTimeout(() => setEditing(true), 600);
+}, {passive:true});
+appsEl.addEventListener("touchend", () => clearTimeout(bgTimer), {passive:true});
+appsEl.addEventListener("touchmove", () => clearTimeout(bgTimer), {passive:true});
+
+// ── 拖拽
+let drag = null, ghost = null;
+
+function startGhost(el, x, y){
+  const r = el.getBoundingClientRect();
+  ghost = el.cloneNode(true);
+  ghost.className = "app drag-ghost";
+  ghost.style.width = r.width + "px";
+  ghost.style.height = r.height + "px";
+  document.body.appendChild(ghost);
+  el.classList.add("drag-src");
+  moveGhost(x, y);
+}
+function moveGhost(x, y){
+  if (!ghost) return;
+  ghost.style.transform = `translate(${x - ghost.offsetWidth/2}px, ${y - ghost.offsetHeight/2}px) scale(1.08)`;
+}
+function clearHi(){
+  document.querySelectorAll(".drop-hi").forEach(e => e.classList.remove("drop-hi"));
+}
+function finishDrag(x, y){
+  const under = document.elementFromPoint(x, y);
+  const folder = under && under.closest("#apps .folder");
+  const target = under && under.closest("#apps .app");
+  const name = drag.el.dataset.app;
+
+  if (folder){
+    removeApp(name); addToFolder(name, folder.dataset.folder);
+  } else if (target && target !== drag.el){
+    if (target.dataset.folder){
+      removeApp(name); addToFolder(name, target.dataset.folder);
+    } else if (target.dataset.app){
+      removeApp(name); insertBefore(name, target.dataset.app);
+    }
+  }
+  saveLayout(); buildHome();
+  if (ghost){ ghost.remove(); ghost = null; }
+  if (drag && drag.el) drag.el.classList.remove("drag-src");
+  clearHi();
+  drag = null;
+}
+
+function bindDrag(el){
+  el.addEventListener("touchstart", e => {
+    if (!editing || !el.dataset.app) return;
+    const t = e.touches[0];
+    drag = { el, x0: t.clientX, y0: t.clientY, moved: false };
+  }, {passive:true});
+
+  el.addEventListener("touchmove", e => {
+    if (!editing || !drag || drag.el !== el) return;
+    const t = e.touches[0];
+    if (!drag.moved && Math.hypot(t.clientX - drag.x0, t.clientY - drag.y0) > 8){
+      drag.moved = true;
+      startGhost(el, t.clientX, t.clientY);
+    }
+    if (drag.moved){
+      e.preventDefault();
+      moveGhost(t.clientX, t.clientY);
+      clearHi();
+      const under = document.elementFromPoint(t.clientX, t.clientY);
+      const tgt = under && under.closest("#apps .app");
+      if (tgt && tgt !== el) tgt.classList.add("drop-hi");
+    }
+  }, {passive:false});
+
+  el.addEventListener("touchend", e => {
+    if (!editing || !drag || drag.el !== el) return;
+    if (drag.moved){
+      const t = e.changedTouches[0];
+      finishDrag(t.clientX, t.clientY);
+    } else {
+      drag = null;
+    }
+  });
+
+  el.addEventListener("click", ev => { if (editing) ev.preventDefault(); });
+}
 
 function tick(){
   const d = new Date(), h = d.getHours();
@@ -483,6 +681,7 @@ let pressTimer = null, longFired = false;
 function closeCtx(){ ctx.classList.remove("on"); }
 
 function showCtx(el, x, y){
+  if (editing) return;
   const name = el.querySelector("span") ? el.querySelector("span").textContent.trim() : "App";
   const href = el.getAttribute("href");
   const self = el.id === "toP2";
