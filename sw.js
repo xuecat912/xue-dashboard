@@ -1,5 +1,5 @@
 /* 雪 OS · 离线缓存 */
-const CACHE = "xue-os-v11";
+const CACHE = "xue-os-v12";
 const SHELL = [
   "./",
   "./index.html",
