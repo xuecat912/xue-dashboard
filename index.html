@@ -15,10 +15,9 @@
   :root{
     --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.10);
     --txt:#eef0f6; --dim:#98a1b6; --accent:#8b7cff; --warm:#ffb27a;
-    --bg:#080a14;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html{background:var(--bg)}
+  html{background:#080a14}
   body{
     margin:0; color:var(--txt); min-height:100vh;
     font-family:-apple-system,"SF Pro Text","PingFang SC",system-ui,sans-serif;
@@ -31,21 +30,16 @@
     padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 30px);
   }
   .wrap{max-width:600px; margin:0 auto}
-
-  /* 顶部 */
   .top{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding:4px 4px 0}
   .clock{font-size:40px; font-weight:200; letter-spacing:-1.6px; line-height:1; font-variant-numeric:tabular-nums}
   .dt{font-size:11.5px; color:var(--dim); margin-top:6px; letter-spacing:.4px}
   .hello{font-size:12px; color:#cfd4e4; text-align:right; line-height:1.5}
   .hello b{color:var(--warm); font-weight:600}
 
-  /* 搜索 */
   .searchbox{margin:16px 0 0; position:relative}
-  #q{
-    width:100%; padding:14px 16px 14px 42px; border-radius:16px; font-size:16px;
+  #q{width:100%; padding:14px 16px 14px 42px; border-radius:16px; font-size:16px;
     background:rgba(255,255,255,.09); border:1px solid var(--line); color:var(--txt);
-    outline:none; font-family:inherit;
-  }
+    outline:none; font-family:inherit}
   #q::placeholder{color:#8b95aa}
   .searchbox svg{position:absolute; left:15px; top:15px; width:16px; height:16px; opacity:.55}
 
@@ -53,8 +47,6 @@
      margin:24px 0 8px 4px; text-transform:uppercase}
   .card{background:var(--card); border:1px solid var(--line); border-radius:18px;
         padding:13px 15px; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px)}
-
-  /* 天气+日程 */
   .stat{display:flex; align-items:center; gap:14px}
   .stat .t{font-size:30px; font-weight:200; letter-spacing:-1px}
   .stat .c{font-size:12px; color:#dfe3ee}
@@ -62,25 +54,25 @@
   .sep{width:1px; align-self:stretch; background:var(--line)}
   .stat .a{font-size:12px; color:#cfd4e4; line-height:1.5; flex:1}
 
-  /* 行 */
   .list{background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:hidden}
-  .row{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:13px 16px; color:var(--txt); text-decoration:none; font-size:14.5px;
-    border-top:1px solid rgba(255,255,255,.055);
-  }
+    border-top:1px solid rgba(255,255,255,.055)}
   .row:first-child{border-top:none}
   .row:active{background:rgba(255,255,255,.10)}
   .row .n{display:flex; align-items:center; gap:9px; min-width:0}
-  .row .n span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .row .n i{width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.22); flex:none}
+  .row .n span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .row .r{display:flex; align-items:center; gap:8px; flex:none}
+  .tag{font-size:9.5px; color:#7d859b; border:1px solid rgba(255,255,255,.14);
+       border-radius:6px; padding:1px 5px; letter-spacing:.3px}
   .row .arrow{color:var(--accent); font-size:12px; opacity:.85}
   .row.pri .n i{background:var(--accent)}
   .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:9px}
   .chips a{background:rgba(139,124,255,.13); border:1px solid rgba(139,124,255,.28);
     color:#dcd6ff; text-decoration:none; font-size:12.5px; padding:8px 12px; border-radius:12px}
   .chips a:active{background:rgba(139,124,255,.32)}
-  .sub{font-size:10.5px; color:#6f7890; margin-top:10px; letter-spacing:.4px}
+  .sub{font-size:10.5px; color:#6f7890; margin-top:10px; letter-spacing:.4px; line-height:1.7}
   .empty{color:var(--dim); font-size:13px; text-align:center; padding:26px 0}
   footer{text-align:center; color:#5f6880; font-size:10.5px; margin-top:26px; letter-spacing:1px; line-height:1.9}
 </style>
@@ -116,9 +108,17 @@
 
     <div id="sections"></div>
 
+    <h2>系统里没有深链</h2>
+    <div class="card">
+      <div class="sub" style="margin-top:0">
+        相机 · 计算器 · 设置 · 钱包 · 密码 · 翻译 · 测距仪 · 放大器 · 指南针 · 语音备忘录 · Watch · 视频 · 健身 · 预览 · 支持 · 云·星穹（若打不开）<br>
+        这些只能从系统桌面点，苹果没给外部入口喵。
+      </div>
+    </div>
+
     <footer>
       <span id="stamp"></span> · 雪做的 OS<br>
-      长按任意行可复制链接 · 找不到的 App 告诉我，我加进去 🐾
+      已按你手机里的 App 定制 · 长按行可复制链接 🐾
     </footer>
   </div>
 
@@ -126,144 +126,112 @@
 </div>
 
 <script>
-const LAT = 23.3924, LON = 113.4924;
+const LAT = 23.106, LON = 113.459;   // 黄埔区
 const CODE = {0:"晴",1:"大部晴",2:"局部多云",3:"阴",45:"雾",48:"雾凇",51:"小毛雨",53:"毛雨",55:"浓毛雨",
   61:"小雨",63:"中雨",65:"大雨",66:"冻雨",67:"冻雨",71:"小雪",73:"中雪",75:"大雪",77:"雪粒",
   80:"阵雨",81:"强阵雨",82:"暴雨",85:"阵雪",86:"强阵雪",95:"雷阵雨",96:"雷阵雨伴冰雹",99:"强雷暴"};
 const two = n => String(n).padStart(2, "0");
 
-/* ───────── App 目录：名字 / scheme / 拼音首字母（用于搜索） ───────── */
+/* v:1 = 已验证/系统自带可靠；v:0 = 按社区值推测，点不动属正常 */
 const APPS = [
-  // 常用
-  { n:"微信", s:"weixin://", c:"常用", k:"wx" },
-  { n:"网易云音乐", s:"orpheus://", c:"常用", k:"wyy" },
-  { n:"哔哩哔哩", s:"bilibili://", c:"常用", k:"bili" },
-  { n:"支付宝", s:"alipay://", c:"常用", k:"zfb" },
-  { n:"星穹铁道", s:"hkrpg://", c:"常用", k:"xqtd" },
-  { n:"回到雪", s:"minis://", c:"常用", k:"hdx" },
+  { n:"微信",        s:"weixin://",            c:"常用", k:"wx",    v:1 },
+  { n:"网易云音乐",   s:"orpheus://",           c:"常用", k:"wyy",   v:1 },
+  { n:"哔哩哔哩",     s:"bilibili://",          c:"常用", k:"bili",  v:1 },
+  { n:"支付宝",       s:"alipay://",            c:"常用", k:"zfb",   v:1 },
+  { n:"QQ",          s:"mqq://",               c:"常用", k:"qq",    v:1 },
+  { n:"抖音",         s:"snssdk1128://",        c:"常用", k:"dy",    v:1 },
+  { n:"回到雪",       s:"minis://",             c:"常用", k:"hdx",   v:1 },
 
-  // 系统
-  { n:"电话", s:"tel://", c:"系统", k:"dh" },
-  { n:"信息", s:"sms://", c:"系统", k:"xx" },
-  { n:"FaceTime", s:"facetime://", c:"系统", k:"ft" },
-  { n:"邮件", s:"mailto://", c:"系统", k:"yj" },
-  { n:"日历", s:"calshow://", c:"系统", k:"rl" },
-  { n:"时钟 / 闹钟", s:"clock-alarm://", c:"系统", k:"sz" },
-  { n:"提醒事项", s:"x-apple-reminder://", c:"系统", k:"txsx" },
-  { n:"备忘录", s:"mobilenotes://", c:"系统", k:"bwl" },
-  { n:"天气", s:"weather://", c:"系统", k:"tq" },
-  { n:"地图", s:"maps://", c:"系统", k:"dt" },
-  { n:"照片", s:"photos-redirect://", c:"系统", k:"zp" },
-  { n:"文件", s:"shareddocuments://", c:"系统", k:"wj" },
-  { n:"健康", s:"x-apple-health://", c:"系统", k:"jk" },
-  { n:"音乐", s:"music://", c:"系统", k:"yy" },
-  { n:"播客", s:"podcasts://", c:"系统", k:"bk" },
-  { n:"App Store", s:"itms-apps://", c:"系统", k:"as" },
-  { n:"快捷指令", s:"shortcuts://", c:"系统", k:"kqzl" },
+  { n:"崩坏：星穹铁道", s:"hkrpg://",            c:"游戏", k:"xqtd",  v:0 },
+  { n:"云·星穹铁道",   s:"cloudhkrpg://",        c:"游戏", k:"yxqtd", v:0 },
+  { n:"掌上英雄联盟",   s:"lolmobile://",        c:"游戏", k:"zslm",  v:0 },
+  { n:"金铲铲之战",     s:"jcczz://",            c:"游戏", k:"jcc",   v:0 },
+  { n:"燕云十六声",     s:"yanyun://",           c:"游戏", k:"yyss",  v:0 },
+  { n:"TapTap",       s:"taptap://",           c:"游戏", k:"tap",   v:0 },
+  { n:"小黑盒",       s:"xiaoheihe://",         c:"游戏", k:"xhh",   v:0 },
+  { n:"米游社",       s:"miyoushe://",          c:"游戏", k:"mys",   v:0 },
+  { n:"虎扑",         s:"hupu://",              c:"游戏", k:"hp",    v:0 },
 
-  // 社交
-  { n:"QQ", s:"mqq://", c:"社交", k:"qq" },
-  { n:"微博", s:"sinaweibo://", c:"社交", k:"wb" },
-  { n:"小红书", s:"xhsdiscover://", c:"社交", k:"xhs" },
-  { n:"抖音", s:"snssdk1128://", c:"社交", k:"dy" },
-  { n:"快手", s:"kwai://", c:"社交", k:"ks" },
-  { n:"Telegram", s:"tg://", c:"社交", k:"tg" },
-  { n:"WhatsApp", s:"whatsapp://", c:"社交", k:"wa" },
-  { n:"Discord", s:"discord://", c:"社交", k:"dc" },
-  { n:"知乎", s:"zhihu://", c:"社交", k:"zh" },
-  { n:"豆瓣", s:"douban://", c:"社交", k:"db" },
+  { n:"京东",         s:"openapp.jdmobile://",   c:"生活", k:"jd",    v:1 },
+  { n:"美团",         s:"imeituan://",          c:"生活", k:"mt",    v:1 },
+  { n:"携程旅行",      s:"ctrip://",             c:"生活", k:"xc",    v:0 },
+  { n:"东莞农商银行",   s:"drcbank://",           c:"生活", k:"drcb",  v:0 },
+  { n:"方舟健客",      s:"fangzhoujk://",        c:"生活", k:"fzjk",  v:0 },
+  { n:"红果短剧",      s:"hongguo://",           c:"生活", k:"hg",    v:0 },
+  { n:"联合早报",      s:"zaobao://",            c:"生活", k:"lhbz",  v:0 },
 
-  // 影音
-  { n:"QQ音乐", s:"qqmusic://", c:"影音", k:"qqyy" },
-  { n:"酷狗音乐", s:"kugou://", c:"影音", k:"kg" },
-  { n:"喜马拉雅", s:"ximalaya://", c:"影音", k:"xmay" },
-  { n:"腾讯视频", s:"tenvideo://", c:"影音", k:"txsp" },
-  { n:"爱奇艺", s:"iqiyi://", c:"影音", k:"aqy" },
-  { n:"优酷", s:"youku://", c:"影音", k:"yk" },
-  { n:"芒果TV", s:"mgtv://", c:"影音", k:"mgtv" },
-  { n:"YouTube", s:"youtube://", c:"影音", k:"yt" },
-  { n:"Spotify", s:"spotify://", c:"影音", k:"sp" },
-  { n:"Netflix", s:"nflx://", c:"影音", k:"nf" },
+  { n:"粉笔",         s:"fenbi://",             c:"学习", k:"fb",    v:0 },
+  { n:"四海公考",      s:"sihaigk://",           c:"学习", k:"shgk",  v:0 },
+  { n:"公考雷达",      s:"gkld://",              c:"学习", k:"gkld",  v:0 },
 
-  // 生活 / 出行 / 购物
-  { n:"淘宝", s:"taobao://", c:"生活", k:"tb" },
-  { n:"京东", s:"openapp.jdmobile://", c:"生活", k:"jd" },
-  { n:"拼多多", s:"pinduoduo://", c:"生活", k:"pdd" },
-  { n:"美团", s:"imeituan://", c:"生活", k:"mt" },
-  { n:"饿了么", s:"ele.me://", c:"生活", k:"elm" },
-  { n:"滴滴出行", s:"diditaxi://", c:"生活", k:"dd" },
-  { n:"高德地图", s:"iosamap://", c:"生活", k:"gd" },
-  { n:"百度地图", s:"baidumap://", c:"生活", k:"bd" },
-  { n:"12306", s:"cn.12306://", c:"生活", k:"12306" },
+  { n:"DeepSeek",     s:"deepseek://",          c:"工具", k:"ds",    v:0 },
+  { n:"Proton Mail",  s:"protonmail://",        c:"工具", k:"pm",    v:0 },
+  { n:"Clash Mi",     s:"clash://",             c:"工具", k:"clash", v:0 },
 
-  // 工作 / 效率
-  { n:"飞书", s:"lark://", c:"效率", k:"fs" },
-  { n:"钉钉", s:"dingtalk://", c:"效率", k:"dd2" },
-  { n:"企业微信", s:"wxwork://", c:"效率", k:"qywx" },
-  { n:"Notion", s:"notion://", c:"效率", k:"nt" },
-  { n:"百度网盘", s:"baiduyun://", c:"效率", k:"bdwp" },
-
-  // 游戏
-  { n:"Steam", s:"steam://", c:"游戏", k:"steam" }
+  { n:"电话",         s:"tel://",               c:"系统", k:"dh",    v:1 },
+  { n:"信息",         s:"sms://",               c:"系统", k:"xx",    v:1 },
+  { n:"FaceTime",     s:"facetime://",          c:"系统", k:"ft",    v:1 },
+  { n:"邮件",         s:"mailto://",            c:"系统", k:"yj",    v:1 },
+  { n:"日历",         s:"calshow://",           c:"系统", k:"rl",    v:1 },
+  { n:"时钟",         s:"clock-alarm://",       c:"系统", k:"sz",    v:1 },
+  { n:"提醒事项",      s:"x-apple-reminder://",  c:"系统", k:"txsx",  v:1 },
+  { n:"备忘录",       s:"mobilenotes://",        c:"系统", k:"bwl",   v:1 },
+  { n:"天气",         s:"weather://",           c:"系统", k:"tq",    v:1 },
+  { n:"地图",         s:"maps://",              c:"系统", k:"dt",    v:1 },
+  { n:"照片",         s:"photos-redirect://",   c:"系统", k:"zp",    v:1 },
+  { n:"文件",         s:"shareddocuments://",   c:"系统", k:"wj",    v:1 },
+  { n:"健康",         s:"x-apple-health://",    c:"系统", k:"jk",    v:1 },
+  { n:"快捷指令",      s:"shortcuts://",         c:"系统", k:"kqzl",  v:1 },
+  { n:"App Store",    s:"itms-apps://",         c:"系统", k:"as",    v:1 }
 ];
 
-const CATS = ["常用", "系统", "社交", "影音", "生活", "效率", "游戏"];
+const CATS = ["常用", "游戏", "生活", "学习", "工具", "系统"];
 
-/* ───────── 渲染 ───────── */
 const sectionsEl = document.getElementById("sections");
 const resultsEl = document.getElementById("results");
 const mainEl = document.getElementById("main");
 
 function rowHTML(a){
-  return `<a class="row${a.c === "常用" ? " pri" : ""}" href="${a.s}"><span class="n"><i></i><span>${a.n}</span></span><span class="arrow">↗</span></a>`;
+  const tag = a.v ? "" : `<span class="tag">未验证</span>`;
+  return `<a class="row${a.c === "常用" ? " pri" : ""}" href="${a.s}">`
+       + `<span class="n"><i></i><span>${a.n}</span></span>`
+       + `<span class="r">${tag}<span class="arrow">↗</span></span></a>`;
 }
 
-function buildSections(){
-  sectionsEl.innerHTML = CATS.map(cat => {
-    const list = APPS.filter(a => a.c === cat);
-    if (!list.length) return "";
-    const rows = list.map(rowHTML).join("");
-    return `<h2>${cat}</h2><div class="list">${rows}</div>`;
-  }).join("") + `
-    <h2>点歌</h2>
-    <div class="card">
-      <div class="chips">
-        <a href="orpheus://song/386826">狗尿馆</a>
-        <a href="orpheus://song/386828">不万能的喜剧</a>
-        <a href="orpheus://song/386829">揪心的玩笑</a>
-        <a href="orpheus://song/386830">大石碎胸口</a>
-        <a href="orpheus://song/386832">洋鸟消夏录</a>
-        <a href="orpheus://song/386835">秦皇岛</a>
-        <a href="orpheus://song/386837">十万嬉皮</a>
-        <a href="orpheus://song/386844">杀死那个石家庄人</a>
-      </div>
-      <div class="sub">万青《万能青年旅店》· 2010</div>
-    </div>`;
-}
-buildSections();
+sectionsEl.innerHTML = CATS.map(cat => {
+  const list = APPS.filter(a => a.c === cat);
+  if (!list.length) return "";
+  return `<h2>${cat}</h2><div class="list">${list.map(rowHTML).join("")}</div>`;
+}).join("") + `
+  <h2>点歌</h2>
+  <div class="card">
+    <div class="chips">
+      <a href="orpheus://song/386826">狗尿馆</a>
+      <a href="orpheus://song/386828">不万能的喜剧</a>
+      <a href="orpheus://song/386829">揪心的玩笑</a>
+      <a href="orpheus://song/386830">大石碎胸口</a>
+      <a href="orpheus://song/386832">洋鸟消夏录</a>
+      <a href="orpheus://song/386835">秦皇岛</a>
+      <a href="orpheus://song/386837">十万嬉皮</a>
+      <a href="orpheus://song/386844">杀死那个石家庄人</a>
+    </div>
+    <div class="sub">万青《万能青年旅店》· 2010</div>
+  </div>`;
 
-/* ───────── 搜索 ───────── */
 const qEl = document.getElementById("q");
-function doSearch(){
+qEl.addEventListener("input", () => {
   const q = qEl.value.trim().toLowerCase();
   if (!q){
-    mainEl.style.display = "";
-    resultsEl.style.display = "none";
-    resultsEl.innerHTML = "";
+    mainEl.style.display = ""; resultsEl.style.display = "none"; resultsEl.innerHTML = "";
     return;
   }
-  const hits = APPS.filter(a =>
-    a.n.toLowerCase().includes(q) || a.k.includes(q) || a.s.toLowerCase().includes(q)
-  );
-  mainEl.style.display = "none";
-  resultsEl.style.display = "";
+  const hits = APPS.filter(a => a.n.toLowerCase().includes(q) || a.k.includes(q) || a.s.toLowerCase().includes(q));
+  mainEl.style.display = "none"; resultsEl.style.display = "";
   resultsEl.innerHTML = hits.length
     ? `<h2>结果 ${hits.length}</h2><div class="list">${hits.map(rowHTML).join("")}</div>`
     : `<div class="empty">没找到「${q}」<br><span style="font-size:11.5px">告诉我名字，我加进去</span></div>`;
-}
-qEl.addEventListener("input", doSearch);
+});
 
-/* ───────── 长按复制链接 ───────── */
 let lpTimer = null;
 document.addEventListener("touchstart", e => {
   const row = e.target.closest(".row");
@@ -271,21 +239,20 @@ document.addEventListener("touchstart", e => {
   lpTimer = setTimeout(async () => {
     try{
       await navigator.clipboard.writeText(row.href);
-      row.querySelector(".arrow").textContent = "已复制";
-      setTimeout(() => { row.querySelector(".arrow").textContent = "↗"; }, 900);
+      const ar = row.querySelector(".arrow");
+      ar.textContent = "已复制";
+      setTimeout(() => { ar.textContent = "↗"; }, 900);
     }catch(_){}
   }, 550);
 }, {passive:true});
 ["touchend","touchmove","touchcancel"].forEach(t =>
   document.addEventListener(t, () => clearTimeout(lpTimer), {passive:true}));
 
-/* ───────── 时钟 ───────── */
 function tick(){
   const d = new Date(), h = d.getHours();
   document.getElementById("clock").textContent = two(h) + ":" + two(d.getMinutes());
   const wd = ["周日","周一","周二","周三","周四","周五","周六"][d.getDay()];
-  document.getElementById("dt").textContent =
-    (d.getMonth()+1) + "月" + d.getDate() + "日 · " + wd;
+  document.getElementById("dt").textContent = (d.getMonth()+1) + "月" + d.getDate() + "日 · " + wd;
   let g;
   if (h < 5) g = "还没睡呀，<b>耳朵竖着呢</b>";
   else if (h < 11) g = "早上好，<b>先喝水</b>";
@@ -299,7 +266,6 @@ function tick(){
 }
 tick(); setInterval(tick, 10000);
 
-/* ───────── 天气 ───────── */
 async function wx(){
   try{
     const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
@@ -307,16 +273,14 @@ async function wx(){
       + "&timezone=Asia%2FShanghai&forecast_days=1";
     const j = await (await fetch(u)).json();
     const c = j.current, dl = j.daily;
-    const d = {
-      t: Math.round(c.temperature_2m), cond: CODE[c.weather_code] || "—",
+    const d = { t: Math.round(c.temperature_2m), cond: CODE[c.weather_code] || "—",
       range: Math.round(dl.temperature_2m_min[0]) + "° / " + Math.round(dl.temperature_2m_max[0]) + "°",
-      at: Date.now()
-    };
-    localStorage.setItem("xue_wx2", JSON.stringify(d));
+      at: Date.now() };
+    localStorage.setItem("xue_wx3", JSON.stringify(d));
     paint(d, false);
   }catch(e){
     let d = null;
-    try{ d = JSON.parse(localStorage.getItem("xue_wx2") || "null"); }catch(_){}
+    try{ d = JSON.parse(localStorage.getItem("xue_wx3") || "null"); }catch(_){}
     if (d) paint(d, true);
     else document.getElementById("wxsub").textContent = "离线";
   }
@@ -326,7 +290,7 @@ function paint(d, offline){
   document.getElementById("cond").textContent = d.cond;
   const t = new Date(d.at);
   document.getElementById("wxsub").textContent =
-    (offline ? "离线 · 上次 " : "更新 ") + two(t.getHours()) + ":" + two(t.getMinutes()) + " · " + d.range;
+    (offline ? "离线 · 上次 " : "更新 ") + two(t.getHours()) + ":" + two(t.getMinutes()) + " · 黄埔 " + d.range;
 }
 wx(); setInterval(wx, 600000);
 
