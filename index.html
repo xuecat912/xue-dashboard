@@ -213,20 +213,30 @@ function tick(){
 tick(); setInterval(tick, 10000);
 
 async function wx(){
+  const tmp = document.getElementById("temp"), cd = document.getElementById("cond"), sub = document.getElementById("wsub");
   try{
     const u = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
       + "&current=temperature_2m,relative_humidity_2m,weather_code"
       + "&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FShanghai&forecast_days=1";
     const j = await (await fetch(u)).json();
     const c = j.current, dl = j.daily;
-    document.getElementById("temp").textContent = Math.round(c.temperature_2m) + "°";
-    document.getElementById("cond").textContent = CODE[c.weather_code] || "—";
-    document.getElementById("wsub").textContent =
-      "广州 · " + Math.round(dl.temperature_2m_min[0]) + "° / " + Math.round(dl.temperature_2m_max[0]) + "°";
+    const data = {
+      t: Math.round(c.temperature_2m),
+      c: CODE[c.weather_code] || "—",
+      r: Math.round(dl.temperature_2m_min[0]) + "° / " + Math.round(dl.temperature_2m_max[0]) + "°",
+      at: Date.now()
+    };
+    localStorage.setItem("xue_wx", JSON.stringify(data));
+    tmp.textContent = data.t + "°"; cd.textContent = data.c; sub.textContent = "广州 · " + data.r;
   }catch(e){
-    document.getElementById("temp").textContent = "24°";
-    document.getElementById("cond").textContent = "局部多云";
-    document.getElementById("wsub").textContent = "广州 · 21° / 30°";
+    let d = null;
+    try{ d = JSON.parse(localStorage.getItem("xue_wx") || "null"); }catch(_){}
+    if (d){
+      tmp.textContent = d.t + "°"; cd.textContent = d.c;
+      sub.textContent = "离线 · 上次 " + new Date(d.at).toTimeString().slice(0,5);
+    } else {
+      tmp.textContent = "--°"; cd.textContent = "离线"; sub.textContent = "连上网络后自会更新";
+    }
   }
 }
 wx(); setInterval(wx, 600000);
@@ -245,6 +255,13 @@ document.getElementById("toP2").addEventListener("click", e => {
   e.preventDefault();
   pages.scrollTo({left: pages.clientWidth, behavior:"smooth"});
 });
+
+// 离线缓存
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
