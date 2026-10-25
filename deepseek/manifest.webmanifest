@@ -1,0 +1,20 @@
+{
+  "name": "DeepSeek 余额",
+  "short_name": "DeepSeek",
+  "description": "DeepSeek 开放平台余额面板",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0E17",
+  "theme_color": "#0A0E17",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
