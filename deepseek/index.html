@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B0F19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DeepSeek · 开放平台</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0A0E17; --card:#121A2B; --card2:#0F1626;
+  --line:rgba(255,255,255,.075); --line2:rgba(255,255,255,.14);
+  --txt:#EAF0FF; --dim:#8A9AB8; --dim2:#5C6B87;
+  --acc:#4D6BFE; --acc2:#7C93FF;
+  --ok:#35D07F; --warn:#FFB020; --bad:#FF5C6C;
+  --r:22px;
+}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt)}
+body{
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100dvh;
+  padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 30px);
+  background:
+    radial-gradient(120% 60% at 50% -12%, rgba(77,107,254,.20) 0%, rgba(77,107,254,0) 62%),
+    radial-gradient(80% 40% at 100% 4%, rgba(124,147,255,.10) 0%, rgba(124,147,255,0) 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+.wrap{max-width:460px;margin:0 auto}
+
+/* ---------- head ---------- */
+.head{display:flex;align-items:center;justify-content:space-between;margin:0 2px 18px}
+.brand{display:flex;align-items:center;gap:9px}
+.dot{width:8px;height:8px;border-radius:50%;background:#5C6B87;flex:0 0 8px}
+.dot.on{background:#35D07F;box-shadow:0 0 10px 1px rgba(53,208,127,.8)}
+.dot.err{background:#FF5C6C;box-shadow:0 0 10px 1px rgba(255,92,108,.75)}
+.brand h1{margin:0;font-size:14.5px;font-weight:600;letter-spacing:.2px}
+.brand .sub{font-size:11px;color:var(--dim2);letter-spacing:.06em;text-transform:uppercase}
+.iconbtn{
+  width:36px;height:36px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);
+  color:var(--txt);display:grid;place-items:center;cursor:pointer;transition:.18s;padding:0
+}
+.iconbtn:active{transform:scale(.93);background:rgba(255,255,255,.08)}
+.iconbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.spin{animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ---------- hero ---------- */
+.hero{
+  position:relative;overflow:hidden;
+  border-radius:var(--r);padding:22px 22px 18px;
+  background:linear-gradient(160deg,#17203A 0%,#111828 55%,#0E1422 100%);
+  border:1px solid var(--line2);
+  box-shadow:0 18px 40px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.hero:before{
+  content:"";position:absolute;inset:-60% -30% auto auto;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle,rgba(77,107,254,.35),rgba(77,107,254,0) 68%);pointer-events:none
+}
+.hero .lbl{font-size:12px;color:var(--dim);letter-spacing:.1em;display:flex;align-items:center;gap:8px}
+.pill{font-size:10.5px;padding:2px 8px;border-radius:20px;letter-spacing:.04em;font-weight:600}
+.pill.ok{color:#0B2A1A;background:var(--ok)}
+.pill.warn{color:#2A1B00;background:var(--warn)}
+.pill.bad{color:#2A0009;background:var(--bad)}
+.pill.mut{color:var(--dim);background:rgba(255,255,255,.08)}
+.amount{display:flex;align-items:baseline;gap:6px;margin:8px 0 2px;position:relative;z-index:1}
+.amount .cur{font-size:22px;color:var(--dim);font-weight:400;margin-right:-2px}
+.amount .num{
+  font-size:52px;font-weight:600;letter-spacing:-.03em;line-height:1.05;
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum";
+  background:linear-gradient(180deg,#FFFFFF,#B9C7EA);-webkit-background-clip:text;background-clip:text;color:transparent
+}
+.skel{display:inline-block;width:180px;height:44px;border-radius:10px;
+  background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.13),rgba(255,255,255,.06));
+  background-size:200% 100%;animation:sh 1.3s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.split{display:flex;gap:14px;margin-top:16px;position:relative;z-index:1}
+.split .k{font-size:11px;color:var(--dim2)}
+.split .v{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px}
+.bar{height:6px;border-radius:6px;background:rgba(255,255,255,.08);display:flex;overflow:hidden;margin-top:16px;position:relative;z-index:1}
+.bar i{display:block;height:100%;transition:width .6s cubic-bezier(.22,1,.36,1)}
+.bar .a{background:linear-gradient(90deg,#4D6BFE,#7C93FF)}
+.bar .b{background:rgba(255,255,255,.22)}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:11.5px;color:var(--dim2);position:relative;z-index:1}
+.foot b{color:var(--dim);font-weight:500}
+
+/* ---------- empty ---------- */
+.empty{border-radius:var(--r);padding:26px 22px;background:var(--card);border:1px solid var(--line)}
+.empty h2{margin:0 0 6px;font-size:17px;font-weight:600}
+.empty p{margin:0 0 18px;font-size:13px;color:var(--dim);line-height:1.65}
+.empty .hint{font-size:11.5px;color:var(--dim2);margin-top:12px;line-height:1.6}
+
+/* ---------- generic card ---------- */
+.card{border-radius:var(--r);background:var(--card);border:1px solid var(--line);padding:16px 18px;margin-top:14px}
+.card h3{margin:0 0 12px;font-size:12px;font-weight:600;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+.card h3 span{font-weight:500;letter-spacing:0;text-transform:none;font-size:11px;color:var(--dim2)}
+
+/* ---------- links ---------- */
+.links{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.link{
+  display:flex;align-items:center;gap:10px;padding:13px 13px;border-radius:14px;
+  background:var(--card2);border:1px solid var(--line);text-decoration:none;color:var(--txt);
+  font-size:13.5px;transition:.16s
+}
+.link:active{transform:scale(.97);background:#141E32}
+.link svg{width:16px;height:16px;flex:0 0 16px;stroke:var(--acc2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.link .arw{margin-left:auto;color:var(--dim2);font-size:12px}
+
+/* ---------- chart ---------- */
+.chart{width:100%;height:74px;display:block;overflow:visible}
+.chart .area{fill:url(#g1);opacity:.55}
+.chart .ln{fill:none;stroke:var(--acc2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .pt{fill:#0A0E17;stroke:var(--acc2);stroke-width:2}
+.chart .gl{stroke:rgba(255,255,255,.07);stroke-width:1;stroke-dasharray:3 4}
+.legend{display:flex;justify-content:space-between;font-size:11px;color:var(--dim2);margin-top:8px}
+
+/* ---------- form ---------- */
+label.fl{display:block;font-size:12px;color:var(--dim);margin:0 0 7px}
+input[type=password],input[type=text]{
+  width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--line2);
+  background:#0A1120;color:var(--txt);font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  outline:none;transition:.18s;-webkit-appearance:none
+}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(77,107,254,.16)}
+.btn{
+  width:100%;margin-top:11px;padding:13px;border-radius:13px;border:0;cursor:pointer;
+  background:linear-gradient(180deg,#5A77FF,#4257E8);color:#fff;font-size:14.5px;font-weight:600;
+  transition:.16s;font-family:inherit
+}
+.btn:active{transform:scale(.98);filter:brightness(1.08)}
+.btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--dim);font-weight:500}
+.btn.danger{background:transparent;border:1px solid rgba(255,92,108,.35);color:var(--bad)}
+.row{display:flex;gap:10px;align-items:center}
+.tiny{font-size:11.5px;color:var(--dim2);line-height:1.6;margin-top:10px}
+.errbox{margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(255,92,108,.10);
+  border:1px solid rgba(255,92,108,.28);color:#FFB3BB;font-size:12.5px;line-height:1.6;display:none}
+.errbox.show{display:block}
+details{margin-top:14px}
+summary{font-size:12px;color:var(--dim2);cursor:pointer;list-style:none;padding:4px 0}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"▸ ";color:var(--dim2)}
+details[open] summary:before{content:"▾ "}
+pre{margin:8px 0 0;padding:12px;border-radius:12px;background:#080D18;border:1px solid var(--line);
+  font-size:11px;line-height:1.55;color:#93A6C8;overflow:auto;max-height:220px;font-family:ui-monospace,Menlo,monospace}
+.toast{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 26px);transform:translate(-50%,20px);
+  background:rgba(30,40,60,.96);backdrop-filter:blur(14px);color:#fff;font-size:12.5px;
+  padding:10px 16px;border-radius:12px;border:1px solid var(--line2);opacity:0;pointer-events:none;
+  transition:.25s;z-index:99;white-space:nowrap
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="brand">
+      <span class="dot" id="dot"></span>
+      <div>
+        <h1>DeepSeek 开放平台</h1>
+        <div class="sub" id="subline">未连接</div>
+      </div>
+    </div>
+    <button class="iconbtn" id="refresh" aria-label="刷新">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    </button>
+  </div>
+
+  <!-- 未配置 -->
+  <div class="empty" id="setupCard">
+    <h2>先接上你的账号</h2>
+    <p>粘贴一个 DeepSeek 的 API Key，这个页面就能直接读余额了，不用再登官网。</p>
+    <label class="fl">API Key</label>
+    <input type="password" id="keyInput" placeholder="sk-..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="btn" id="saveKey">保存并读取余额</button>
+    <div class="hint">🔒 Key 只存在这台设备的浏览器本地，不上传任何服务器，也不经过别人。<br>可以去 <a href="https://platform.deepseek.com/api_keys" style="color:var(--acc2)">API Keys 页面</a> 复制一个。</div>
+    <div class="errbox" id="setupErr"></div>
+  </div>
+
+  <!-- 已配置 -->
+  <div id="main" class="hidden">
+    <div class="hero">
+      <div class="lbl">总余额 <span class="pill mut" id="statusPill">—</span></div>
+      <div class="amount"><span class="cur">¥</span><span class="num skel" id="amount">0</span></div>
+      <div class="split">
+        <div><div class="k">充值余额</div><div class="v" id="topup">—</div></div>
+        <div><div class="k">赠送余额</div><div class="v" id="granted">—</div></div>
+      </div>
+      <div class="bar"><i class="a" id="barA" style="width:0"></i><i class="b" id="barB" style="width:0"></i></div>
+      <div class="foot">
+        <span id="burnEst">—</span>
+        <span><b id="updated">未刷新</b></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>余额走势 <span id="trendNote"></span></h3>
+      <svg class="chart" id="chart" viewBox="0 0 300 74" preserveAspectRatio="none">
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#7C93FF" stop-opacity=".55"/>
+          <stop offset="100%" stop-color="#7C93FF" stop-opacity="0"/>
+        </linearGradient></defs>
+        <line class="gl" x1="0" y1="20" x2="300" y2="20"/>
+        <path class="area" d=""></path>
+        <path class="ln" d=""></path>
+      </svg>
+      <div class="legend"><span id="lgL">—</span><span id="lgR">—</span></div>
+    </div>
+
+    <div class="card">
+      <h3>直达</h3>
+      <div class="links">
+        <a class="link" href="https://platform.deepseek.com/top_up"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M2 10h20"/></svg>充值<span class="arw">↗</span></a>
+        <a class="link" href="https://platform.deepseek.com/usage"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>用量统计<span class="arw">↗</span></a>
+        <a class="link" href="https://platform.deepseek.com/api_keys"><svg viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>API Keys<span class="arw">↗</span></a>
+        <a class="link" href="https://api-docs.deepseek.com/zh-cn/"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></svg>文档<span class="arw">↗</span></a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>账号</h3>
+      <div class="row">
+        <button class="btn ghost" id="rekey" style="margin-top:0">更换 Key</button>
+        <button class="btn danger" id="clearKey" style="margin-top:0">清除</button>
+      </div>
+      <div class="tiny">Key 存在本机浏览器里。换设备、清除浏览器数据后需要重新粘贴。</div>
+      <details><summary>原始返回</summary><pre id="raw">—</pre></details>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const API = 'https://api.deepseek.com/user/balance';
+const K_KEY = 'ds_balance_key', K_HIST = 'ds_balance_hist';
+const $ = id => document.getElementById(id);
+
+/* ---- 存储（localStorage 不可用时退化为内存） ---- */
+const store = {
+  mem: {},
+  ok: (() => { try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return true; } catch (e) { return false; } })(),
+  get(k) { if (this.ok) return localStorage.getItem(k); return this.mem[k] ?? null; },
+  set(k, v) { if (this.ok) localStorage.setItem(k, v); else this.mem[k] = v; },
+  del(k) { if (this.ok) localStorage.removeItem(k); else delete this.mem[k]; }
+};
+
+let busy = false;
+
+/* ---- 工具 ---- */
+const money = n => {
+  const x = Number(n);
+  if (!isFinite(x)) return '—';
+  return x.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const fmtTime = t => {
+  const d = new Date(t), now = new Date();
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  if (d.toDateString() === now.toDateString()) return `今天 ${hm}`;
+  return `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
+};
+const toast = msg => {
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('show'), 1800);
+};
+const setDot = s => { $('dot').className = 'dot' + (s ? ' ' + s : ''); };
+
+/* ---- 历史 ---- */
+function getHist() {
+  try { return JSON.parse(store.get(K_HIST) || '[]'); } catch (e) { return []; }
+}
+function pushHist(v) {
+  const h = getHist(); const now = Date.now();
+  const last = h[h.length - 1];
+  if (last && now - last.t < 25 * 60 * 1000) h[h.length - 1] = { t: now, v };
+  else h.push({ t: now, v });
+  while (h.length > 180) h.shift();
+  store.set(K_HIST, JSON.stringify(h));
+  return h;
+}
+
+/* ---- 核心：读余额 ---- */
+async function load(loud) {
+  const key = store.get(K_KEY);
+  if (!key) { showSetup(); return; }
+  if (busy) return;
+  busy = true;
+  $('refresh').firstElementChild.classList.add('spin');
+  try {
+    const r = await fetch(API, { headers: { Authorization: 'Bearer ' + key, Accept: 'application/json' } });
+    const text = await r.text();
+    if (!r.ok) {
+      let msg = `HTTP ${r.status}`;
+      try { const j = JSON.parse(text); msg = j.error?.message || j.message || msg; } catch (e) {}
+      if (r.status === 401) {
+        showSetup();
+        $('setupErr').textContent = '这个 Key 无效、已过期或被删掉了。去 API Keys 页面重新复制一个再试。';
+        $('setupErr').classList.add('show');
+        $('keyInput').value = key;
+        setDot('err'); $('subline').textContent = '鉴权失败';
+        return;
+      }
+      throw new Error(msg);
+    }
+    let data = {};
+    try { data = JSON.parse(text); } catch (e) { throw new Error('返回不是 JSON，可能被网络拦截了'); }
+
+    $('raw').textContent = JSON.stringify(data, null, 2);
+    const infos = Array.isArray(data.balance_infos) ? data.balance_infos
+                : (data.balance_infos && typeof data.balance_infos === 'object' ? [data.balance_infos] : []);
+    const info = infos.find(i => i.currency === 'CNY') || infos[0];
+    if (!info) throw new Error('返回里没有余额信息');
+    if (!isFinite(Number(info.total_balance))) throw new Error('余额字段无法识别，看看下面的原始返回');
+
+    const total = Number(info.total_balance);
+    const topup = Number(info.topped_up_balance || 0);
+    const granted = Number(info.granted_balance || 0);
+    render({ total, topup, granted, available: data.is_available !== false, cur: info.currency || 'CNY', at: Date.now() });
+    const h = pushHist(total);
+    drawChart(h);
+    setDot('on'); $('subline').textContent = '已连接 · 自动刷新';
+    if (loud) toast('余额已更新');
+  } catch (e) {
+    setDot('err'); $('subline').textContent = '读取失败';
+    const amt = $('amount'); amt.classList.remove('skel');
+    if (amt.textContent.trim() === '0') amt.textContent = '—';
+    if (!/Failed to fetch|NetworkError|Load failed/i.test(e.message)) {
+      $('burnEst').textContent = '读取失败：' + e.message;
+    } else {
+      $('burnEst').textContent = '网络不通（检查是否连上了能访问 api.deepseek.com 的网络）';
+    }
+    if (loud) toast('刷新失败');
+  } finally {
+    busy = false;
+    $('refresh').firstElementChild.classList.remove('spin');
+  }
+}
+
+/* ---- 渲染 ---- */
+function render(d) {
+  $('setupCard').classList.add('hidden');
+  $('main').classList.remove('hidden');
+  const el = $('amount'); el.classList.remove('skel'); el.textContent = money(d.total);
+
+  const pill = $('statusPill');
+  if (!d.available) { pill.className = 'pill bad'; pill.textContent = '不可用'; }
+  else if (d.total <= 5) { pill.className = 'pill warn'; pill.textContent = '余额偏低'; }
+  else { pill.className = 'pill ok'; pill.textContent = '可用'; }
+
+  $('topup').textContent = '¥' + money(d.topup);
+  $('granted').textContent = '¥' + money(d.granted);
+  const sum = d.topup + d.granted;
+  if (sum > 0) {
+    $('barA').style.width = (d.topup / sum * 100).toFixed(2) + '%';
+    $('barB').style.width = (d.granted / sum * 100).toFixed(2) + '%';
+  } else { $('barA').style.width = '0'; $('barB').style.width = '100%'; }
+
+  // 消耗速度
+  const h = getHist();
+  let est = '暂无消耗数据';
+  if (h.length >= 2) {
+    const first = h[0], last = h[h.length - 1];
+    const days = (last.t - first.t) / 86400000;
+    const used = first.v - last.v;
+    if (days >= 0.02 && used > 0) {
+      const perDay = used / days;
+      const left = perDay > 0 ? d.total / perDay : Infinity;
+      est = `日均 ¥${money(perDay)} · 约够 ${left > 999 ? '999+' : left.toFixed(left < 10 ? 1 : 0)} 天`;
+    } else if (used < -0.001) {
+      est = `期间充值 ¥${money(-used)}`;
+    } else if (used > -0.001 && used < 0.001) est = '期间余额没动过';
+    else est = '正在积累数据';
+  }
+  $('burnEst').textContent = est;
+  $('updated').textContent = fmtTime(d.at);
+  $('lgR').textContent = '现在';
+  if (h.length) $('lgL').textContent = fmtTime(h[0].t);
+}
+
+function drawChart(h) {
+  const svg = $('chart'), ln = svg.querySelector('.ln'), area = svg.querySelector('.area');
+  if (!h || h.length < 2) {
+    ln.setAttribute('d', ''); area.setAttribute('d', '');
+    $('trendNote').textContent = '多刷新几次才有走势';
+    $('lgL').textContent = '—';
+    return;
+  }
+  const W = 300, H = 74, P = 5;
+  const vs = h.map(p => p.v);
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  if (hi - lo < 0.01) { hi = lo + 1; lo -= 1; }
+  const pad = (hi - lo) * 0.15; lo -= pad; hi += pad;
+  const xs = i => (h.length === 1 ? W / 2 : P + i * (W - P * 2) / (h.length - 1));
+  const ys = v => H - P - (v - lo) / (hi - lo) * (H - P * 2);
+  const pts = h.map((p, i) => [xs(i), ys(p.v)]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  ln.setAttribute('d', d);
+  area.setAttribute('d', d + ` L ${pts[pts.length - 1][0].toFixed(1)} ${H} L ${pts[0][0].toFixed(1)} ${H} Z`);
+  svg.querySelectorAll('.pt').forEach(n => n.remove());
+  const lastPt = pts[pts.length - 1];
+  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('class', 'pt'); c.setAttribute('cx', lastPt[0]); c.setAttribute('cy', lastPt[1]); c.setAttribute('r', '3');
+  svg.appendChild(c);
+  const drop = h[0].v - h[h.length - 1].v;
+  $('trendNote').textContent = drop > 0 ? `已用 ¥${money(drop)}` : (drop < 0 ? `+¥${money(-drop)}` : '持平');
+  $('lgL').textContent = fmtTime(h[0].t);
+}
+
+/* ---- 视图切换 ---- */
+function showSetup() {
+  $('main').classList.add('hidden');
+  $('setupCard').classList.remove('hidden');
+}
+
+/* ---- 事件 ---- */
+$('saveKey').onclick = () => {
+  const v = $('keyInput').value.trim();
+  if (!v) { $('keyInput').focus(); return; }
+  store.set(K_KEY, v);
+  $('setupErr').classList.remove('show');
+  $('main').classList.remove('hidden');
+  $('setupCard').classList.add('hidden');
+  $('amount').classList.add('skel');
+  load(true);
+};
+$('keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('saveKey').click(); });
+$('refresh').onclick = () => load(true);
+$('rekey').onclick = () => {
+  $('keyInput').value = store.get(K_KEY) || '';
+  showSetup(); $('keyInput').focus();
+};
+$('clearKey').onclick = () => {
+  store.del(K_KEY); store.del(K_HIST);
+  $('keyInput').value = ''; showSetup();
+  setDot(''); $('subline').textContent = '未连接';
+  toast('已清除');
+};
+
+/* ---- 启动 ---- */
+(function init() {
+  const key = store.get(K_KEY);
+  if (!key) { showSetup(); return; }
+  $('main').classList.remove('hidden');
+  load(false);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(false); });
+  setInterval(() => { if (!document.hidden) load(false); }, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
